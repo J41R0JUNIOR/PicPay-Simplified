@@ -9,11 +9,11 @@ import java.net.URL;
 @Service
 public class NotificationService {
 
-	public boolean sendNotification() throws IOException {
+	public void sendNotification() throws IOException {
 		URL url = new URL("https://util.devi.tools/api/v1/notify");
 		HttpURLConnection response = (HttpURLConnection) url.openConnection();
 		response.setRequestMethod("POST");
 		System.out.println(response.getResponseCode());
-		return response.getResponseCode() == 200;
+		response.getResponseCode();
 	}
 }
