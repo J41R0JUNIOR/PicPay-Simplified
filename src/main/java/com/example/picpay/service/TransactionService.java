@@ -2,12 +2,16 @@ package com.example.picpay.service;
 
 import com.example.picpay.dto.TransactionRequestDTO;
 import com.example.picpay.dto.TransactionResponseDTO;
+import com.example.picpay.dto.WalletReponseDTO;
+import com.example.picpay.model.CustomerType;
 import com.example.picpay.model.Transaction;
 import com.example.picpay.model.Wallet;
 import com.example.picpay.repository.CustomerRepository;
 import com.example.picpay.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 import java.util.List;
 
 @Service
@@ -16,6 +20,8 @@ public class TransactionService {
 	TransactionRepository transactionRepository;
 	@Autowired
 	CustomerRepository customerRepository;
+	@Autowired
+	AuthService authService;
 
 	public TransactionResponseDTO save(Transaction transaction) {
 		return new TransactionResponseDTO(transaction);
@@ -32,14 +38,21 @@ public class TransactionService {
 	public TransactionResponseDTO transaction(TransactionRequestDTO transaction){
 		Wallet sender = customerRepository.findWalletById(transaction.walletSenderId());
 
-		if(sender == null) return null;
+		if(sender == null) throw new IllegalArgumentException("Invalid sender id");
 
-		if(sender.getBalance() < transaction.amount()) return null;
+		if(sender.getCustomer().getType().equals(CustomerType.SHOPKEEPER.toString())) throw new IllegalArgumentException("Invalid sender type");
+
+		if(sender.getBalance() < transaction.amount()) throw new IllegalArgumentException("Insufficient balance");
+
+		try {
+			if (!authService.isAuthorized()){ throw new IllegalArgumentException("Unauthorized access"); }
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 
 		Wallet receiver = customerRepository.findWalletById(transaction.walletReceiverId());
 
-		sender.setBalance(sender.getBalance() - transaction.amount());
-		receiver.setBalance(receiver.getBalance() + transaction.amount());
+		moveMoney(sender, receiver, transaction.amount());
 
 		Transaction newTransaction = new Transaction();
 		newTransaction.setWalletSenderId(sender.getId());
@@ -48,5 +61,29 @@ public class TransactionService {
 		newTransaction.setStatus("COMPLETED");
 
 		return new TransactionResponseDTO(transactionRepository.save(newTransaction));
+	}
+
+	public List<WalletReponseDTO> revertTransaction(String transactionId){
+		Transaction transaction = transactionRepository.findById(transactionId);
+
+		if(transaction == null) throw new IllegalArgumentException("Invalid transaction id");
+
+		Wallet sender = customerRepository.findWalletById(transaction.getWalletSenderId());
+		Wallet receiver = customerRepository.findWalletById(transaction.getWalletReceiverId());
+
+		transaction.setStatus("REVERTED");
+		transactionRepository.save(transaction);
+
+		moveMoney(receiver, sender, transaction.getAmount());
+
+		return List.of(new WalletReponseDTO(sender), new WalletReponseDTO(receiver));
+	}
+
+	private void moveMoney(Wallet sender, Wallet receiver, Integer amount){
+		sender.setBalance(sender.getBalance() - amount);
+		receiver.setBalance(receiver.getBalance() + amount);
+
+		customerRepository.save(sender);
+		customerRepository.save(receiver);
 	}
 }

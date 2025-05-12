@@ -30,6 +30,13 @@ public class CustomerService {
 		return save(newCustomer);
 	}
 
+	public List<Customer> createAll(List<CustomerRequestDTO> customers) {
+		for (CustomerRequestDTO customer : customers) {
+			create(customer);
+		}
+		return findAll();
+	}
+
 	private Customer save(Customer customer) {
 		return customerRepository.save(customer);
 	}
