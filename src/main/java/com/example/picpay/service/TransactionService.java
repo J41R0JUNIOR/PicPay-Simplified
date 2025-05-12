@@ -22,6 +22,8 @@ public class TransactionService {
 	CustomerRepository customerRepository;
 	@Autowired
 	AuthService authService;
+	@Autowired
+	NotificationService notificationService;
 
 	public TransactionResponseDTO save(Transaction transaction) {
 		return new TransactionResponseDTO(transaction);
@@ -60,7 +62,16 @@ public class TransactionService {
 		newTransaction.setAmount(transaction.amount());
 		newTransaction.setStatus("COMPLETED");
 
-		return new TransactionResponseDTO(transactionRepository.save(newTransaction));
+		TransactionResponseDTO transactionResponseDTO = new  TransactionResponseDTO(transactionRepository.save(newTransaction));
+
+		try {
+			notificationService.sendNotification();
+		} catch (IOException e) {
+//			throw new RuntimeException(e);
+			e.printStackTrace();
+		}
+
+		return transactionResponseDTO;
 	}
 
 	public List<WalletReponseDTO> revertTransaction(String transactionId){
