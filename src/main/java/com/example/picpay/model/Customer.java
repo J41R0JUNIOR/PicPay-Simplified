@@ -3,14 +3,16 @@ package com.example.picpay.model;
 import com.example.picpay.dto.CustomerRequestDTO;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 
 @Entity
-@NoArgsConstructor
-@Getter
+@AllArgsConstructor @NoArgsConstructor
+@Getter @Setter
 public class Customer {
 
 	@Id @GeneratedValue(strategy = GenerationType.AUTO)

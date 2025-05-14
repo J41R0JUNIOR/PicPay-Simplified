@@ -43,7 +43,7 @@ public class TransactionService {
 
 		if(sender.isEmpty()) throw new IllegalArgumentException("Invalid sender id");
 
-		if(sender.get().getCustomer().getType().equals(CustomerType.SHOPKEEPER.toString())) throw new IllegalArgumentException("Invalid sender type");
+		if(sender.get().getCustomer().getType().equals(CustomerType.MERCHANT.toString())) throw new IllegalArgumentException("Invalid sender type");
 
 		if(sender.get().getBalance() < transaction.amount()) throw new IllegalArgumentException("Insufficient balance");
 
